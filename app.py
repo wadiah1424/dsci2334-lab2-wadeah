@@ -1,36 +1,47 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 
-st.title("Qahwa Corner - Sales Dashboard")
-st.write("Cloud Computing for Data Science - Assignment 1")
+st.set_page_config(
+    page_title="Qahwa Corner Sales Dashboard",
+    page_icon="☕️",
+    layout="wide"
+)
 
-@st.cache_data
-def load_data():
-    df = pd.read_csv("cafe_sales.csv")
-    df['date'] = pd.to_datetime(df['date'])
-    return df
+st.title("☕️ Qahwa Corner Sales Dashboard")
+st.write("Coffee Shop Sales Analysis - 2026")
 
-df = load_data()
+# Load dataset
+df = pd.read_csv("cafe_sales.csv")
 
+# Branch selector
+branches = ["All Branches"] + sorted(df["branch"].unique().tolist())
 
-branches = df['branch'].unique().tolist()
-selected_branch = st.selectbox("Select Branch", ["All Branches"] + branches)
+selected_branch = st.selectbox(
+    "Select Branch",
+    branches
+)
 
-if selected_branch != "All Branches":
-    filtered_df = df[df['branch'] == selected_branch]
+# Filter data
+if selected_branch == "All Branches":
+    filtered_df = df.copy()
 else:
-    filtered_df = df
+    filtered_df = df[df["branch"] == selected_branch]
 
-total_revenue = filtered_df['total_sar'].sum()
-st.metric(label="Total Revenue (SAR)", value=f"{total_revenue:,.2f} SAR")
+# Total revenue
+total_revenue = filtered_df["total_sar"].sum()
+
+st.metric(
+    label="Total Revenue (SAR)",
+    value=f"{total_revenue:,.0f} SAR"
+)
+
+# Revenue by product
+product_revenue = (
+    filtered_df.groupby("product")["total_sar"]
+    .sum()
+    .sort_values(ascending=False)
+)
 
 st.subheader("Revenue by Product")
-product_revenue = filtered_df.groupby('product')['total_sar'].sum().reset_index()
 
-fig, ax = plt.subplots(figsize=(10, 5))
-ax.bar(product_revenue['product'], product_revenue['total_sar'], color='skyblue')
-plt.xticks(rotation=45, ha='right')
-ax.set_ylabel("Revenue (SAR)")
-ax.set_xlabel("Product")
-st.pyplot(fig)
+st.bar_chart(product_revenue)
